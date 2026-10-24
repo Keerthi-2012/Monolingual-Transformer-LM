@@ -14,7 +14,7 @@ requirement of the original handout are intentionally skipped, so the manual sha
 | Data collection, cleaning, splits, statistics | Done |
 | Tokenizer (SentencePiece BPE, 24k) | Done |
 | Transformer implementation (25.4M params), training loop, resume test | Done |
-| Pretraining on 500M tokens | Needs a GPU (Colab/Kaggle) |
+| Pretraining on 500M tokens | Done (final validation loss 3.3565, PPL 28.7) |
 | Evaluation (PPL/BPB, BLEU/chrF/ROUGE-L, attention analysis) | Planned |
 | Synthetic Hindi reasoning dataset generator | Done |
 | Reasoning finetuning script (tested on CPU) | Done |
@@ -111,6 +111,9 @@ This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining runs
 3. Save Version -> "Save & Run All (Commit)". Training stops itself after ~10.8 h with a checkpoint.
 4. To continue: open a new session of the same notebook, add the previous version's output as an input, and Save & Run All again. The notebook finds `ckpt_latest.pt` and resumes.
 5. Download `runs/hindi_25m/` (checkpoints, `train_log.jsonl`, `loss_curve.png`) from the notebook output and upload to Drive.
+
+After pretraining, [`hindi/train/kaggle_eval_finetune.ipynb`](hindi/train/kaggle_eval_finetune.ipynb) runs the whole
+evaluation, finetuning and attention pipeline on Kaggle (inputs: `hindi-tokens` + the pretraining notebook's output).
 
 ## Reasoning dataset (Phase 3)
 
