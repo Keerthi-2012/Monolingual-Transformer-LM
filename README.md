@@ -27,7 +27,7 @@ hindi/
   model/       transformer.py, test_model.py
   train/       train.py, test_resume.py
   configs/     hindi_25m.json
-  eval/                                                                  (upcoming)
+  eval/        lm_eval.py (PPL/BPB), gen_eval.py (BLEU/chrF++/ROUGE-L, Distinct-n, repetition), attn_analysis.py, common.py
 report/        dataset_stats.md, tokenizer_eval.json, tokenizer_rank_frequency.png
 ```
 
@@ -109,6 +109,21 @@ This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining runs
 3. Save Version -> "Save & Run All (Commit)". Training stops itself after ~10.8 h with a checkpoint.
 4. To continue: open a new session of the same notebook, add the previous version's output as an input, and Save & Run All again. The notebook finds `ckpt_latest.pt` and resumes.
 5. Download `runs/hindi_25m/` (checkpoints, `train_log.jsonl`, `loss_curve.png`) from the notebook output and upload to Drive.
+
+## Evaluation
+
+All scripts take `--ckpt` and run from `hindi/eval/` (the last cell of the Kaggle notebook runs them for you):
+
+```bash
+pip install sacrebleu matplotlib
+python lm_eval.py   --ckpt <ckpt_best.pt> --out ../../report/lm_eval.json       # val/test loss, PPL, BPB
+python gen_eval.py  --ckpt <ckpt_best.pt> --out-prefix ../../report/gen          # greedy, T=0.5/1.0/1.5
+python attn_analysis.py --ckpt <ckpt_best.pt> --out-dir ../../report/attn --name pretrained
+```
+
+- **PPL / BPB:** non-overlapping 512-token windows over the whole split; BPB = total NLL in bits / UTF-8 bytes of the target tokens (EOS counts 0 bytes).
+- **Generation:** 500 held-out prefixes (64 tokens), 64-token continuations scored against the true continuation: corpus BLEU-4 and chrF++ (sacrebleu), ROUGE-L F1, Distinct-1/2 and 4-gram repetition rate. Samples go to `gen_samples.md`.
+- **Attention:** heatmaps for layers 0, middle and last (4 heads, Hindi example sentences), per-head entropy and mean attention distance on held-out text. An untrained model gives near-uniform attention (mean distance ~T/4), which is the baseline to compare against.
 
 ## Reproduce (data and tokenizer)
 
