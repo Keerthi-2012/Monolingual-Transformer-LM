@@ -1,0 +1,94 @@
+{
+ "train": {
+  "n": 30000,
+  "kind": {
+   "chain3": 7500,
+   "chain4": 7500,
+   "num2": 7500,
+   "num3": 7500
+  },
+  "qtype": {
+   "sup": 18648,
+   "yn": 9476,
+   "pair": 1876
+  },
+  "attr": {
+   "age": 6163,
+   "speed": 6017,
+   "height": 6017,
+   "weight": 5852,
+   "price": 5951
+  },
+  "answer_yes": 4673,
+  "answer_no": 4803
+ },
+ "val": {
+  "n": 1000,
+  "kind": {
+   "chain3": 250,
+   "chain4": 250,
+   "num2": 250,
+   "num3": 250
+  },
+  "qtype": {
+   "sup": 639,
+   "yn": 297,
+   "pair": 64
+  },
+  "attr": {
+   "height": 214,
+   "age": 197,
+   "speed": 211,
+   "weight": 186,
+   "price": 192
+  },
+  "answer_yes": 144,
+  "answer_no": 153
+ },
+ "test_iid": {
+  "n": 1500,
+  "kind": {
+   "chain3": 375,
+   "chain4": 375,
+   "num2": 375,
+   "num3": 375
+  },
+  "qtype": {
+   "sup": 924,
+   "yn": 482,
+   "pair": 94
+  },
+  "attr": {
+   "age": 288,
+   "price": 291,
+   "height": 321,
+   "speed": 297,
+   "weight": 303
+  },
+  "answer_yes": 231,
+  "answer_no": 251
+ },
+ "test_ood": {
+  "n": 1500,
+  "kind": {
+   "chain3": 375,
+   "chain4": 375,
+   "num2": 375,
+   "num3": 375
+  },
+  "qtype": {
+   "sup": 970,
+   "yn": 453,
+   "pair": 77
+  },
+  "attr": {
+   "age": 275,
+   "price": 286,
+   "speed": 287,
+   "height": 316,
+   "weight": 336
+  },
+  "answer_yes": 222,
+  "answer_no": 231
+ }
+}

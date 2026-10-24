@@ -16,7 +16,8 @@ requirement of the original handout are intentionally skipped, so the manual sha
 | Transformer implementation (25.4M params), training loop, resume test | Done |
 | Pretraining on 500M tokens | Needs a GPU (Colab/Kaggle) |
 | Evaluation (PPL/BPB, BLEU/chrF/ROUGE-L, attention analysis) | Planned |
-| Reasoning finetuning (synthetic Hindi comparisons) | Planned |
+| Synthetic Hindi reasoning dataset generator | Done |
+| Reasoning finetuning script and results | Planned |
 
 ## Repository layout
 
@@ -109,6 +110,19 @@ This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining runs
 3. Save Version -> "Save & Run All (Commit)". Training stops itself after ~10.8 h with a checkpoint.
 4. To continue: open a new session of the same notebook, add the previous version's output as an input, and Save & Run All again. The notebook finds `ckpt_latest.pt` and resumes.
 5. Download `runs/hindi_25m/` (checkpoints, `train_log.jsonl`, `loss_curve.png`) from the notebook output and upload to Drive.
+
+## Reasoning dataset (Phase 3)
+
+`python hindi/reasoning/generate.py --out hindi/reasoning/data` writes train (30k), val (1k), test_iid (1.5k) and
+test_ood (1.5k) as jsonl, with `stats.json`. Examples are built programmatically in Hindi, so answers are exact:
+transitive ordering from 3-4 shuffled pairwise statements ("राम सीता से लंबा है। सीता गीता से लंबा है।"), and
+comparing 2-3 stated numbers (height, age, weight, speed, price). Questions are superlative ("सबसे ... कौन है?"),
+pair ("X और Y में से कौन ...?") or yes/no ("क्या X Y से ... है?"). Each example has a short reasoning line
+(ordering, then the conclusion) before `उत्तर:`. Adjectives agree with the subject's gender and masculine item
+nouns take the oblique form before postpositions.
+
+Leakage control: person and item names are disjoint across train/val/test; `test_ood` also uses statement and
+question templates never seen in training; duplicate prompts are removed across all splits (34,000 unique).
 
 ## Evaluation
 
