@@ -121,7 +121,10 @@ def run(cfg, stop_at=None):
     torch.manual_seed(tc["seed"])
     amp_dtype = None
     if device == "cuda":
-        amp_dtype = torch.bfloat16 if (tc["dtype"] in ("auto", "bf16") and torch.cuda.is_bf16_supported()) else torch.float16
+        # bf16 is only native on compute capability >= 8.0 (Ampere+). On a T4 (7.5) PyTorch can emulate it,
+        # which is ~10x slower, so use fp16 + GradScaler there.
+        native_bf16 = torch.cuda.get_device_capability()[0] >= 8
+        amp_dtype = torch.bfloat16 if (tc["dtype"] in ("auto", "bf16") and native_bf16) else torch.float16
     amp_ctx = torch.autocast("cuda", dtype=amp_dtype) if amp_dtype else torch.autocast("cpu", enabled=False)
     scaler = torch.amp.GradScaler("cuda", enabled=amp_dtype == torch.float16)
 
