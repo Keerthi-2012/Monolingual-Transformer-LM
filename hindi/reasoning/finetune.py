@@ -30,6 +30,7 @@ from common import load_model, load_tokenizer  # noqa: E402
 from train import build_optimizer, lr_at  # noqa: E402
 
 ANSWER_TAG = "\nउत्तर:"
+MAX_NEW = 96             # default generation budget: the longest reasoning line + answer is 62 tokens
 
 
 # ---------------------------------------------------------------- data
