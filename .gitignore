@@ -1,0 +1,13 @@
+# large / generated data (share via Google Drive, see README)
+hindi/data/raw/
+hindi/data/processed/
+hindi/data/tokens/
+hindi/data/smoke/
+hindi/tokenizer/models/tokenizer_sample.txt
+*.log
+*.pt
+*.ckpt
+*.bin
+__pycache__/
+# course handout
+LMA_Individual_Project_v1.pdf
