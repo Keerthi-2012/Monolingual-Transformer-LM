@@ -17,7 +17,8 @@ requirement of the original handout are intentionally skipped, so the manual sha
 | Pretraining on 500M tokens | Needs a GPU (Colab/Kaggle) |
 | Evaluation (PPL/BPB, BLEU/chrF/ROUGE-L, attention analysis) | Planned |
 | Synthetic Hindi reasoning dataset generator | Done |
-| Reasoning finetuning script and results | Planned |
+| Reasoning finetuning script (tested on CPU) | Done |
+| Reasoning finetuning results, post-finetune attention comparison, final report | Needs the pretrained checkpoint |
 
 ## Repository layout
 
@@ -123,6 +124,17 @@ nouns take the oblique form before postpositions.
 
 Leakage control: person and item names are disjoint across train/val/test; `test_ood` also uses statement and
 question templates never seen in training; duplicate prompts are removed across all splits (34,000 unique).
+
+### Finetuning
+
+```bash
+python hindi/reasoning/finetune.py --pretrained <runs/hindi_25m/ckpt_best.pt> --out-dir runs/ft
+```
+Evaluates the pretrained model zero-shot with the same prompt format, finetunes (AdamW lr 3e-4, 3 epochs, batch 32,
+loss on the reasoning + answer tokens only, tokenizer fixed), then evaluates again. Metric: exact match on the text
+after `उत्तर:` (greedy decoding) on val / test_iid / test_ood, broken down by task kind and question type, plus the
+fraction of examples whose reasoning line is reproduced exactly. Per-example predictions are saved for error
+analysis. Resumable like pretraining (rerun the same command). `--no-cot` trains on answers only.
 
 ## Evaluation
 
