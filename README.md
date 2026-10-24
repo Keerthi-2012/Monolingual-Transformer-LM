@@ -13,7 +13,8 @@ requirement of the original handout are intentionally skipped, so the manual sha
 |---|---|
 | Data collection, cleaning, splits, statistics | Done |
 | Tokenizer (SentencePiece BPE, 24k) | Done |
-| Transformer implementation, pretraining (~25M params) | Planned |
+| Transformer implementation (25.4M params), training loop, resume test | Done |
+| Pretraining on 500M tokens | Needs a GPU (Colab/Kaggle) |
 | Evaluation (PPL/BPB, BLEU/chrF/ROUGE-L, attention analysis) | Planned |
 | Reasoning finetuning (synthetic Hindi comparisons) | Planned |
 
@@ -23,7 +24,10 @@ requirement of the original handout are intentionally skipped, so the manual sha
 hindi/
   data/        preprocess.py, build_corpus.py, make_stats_report.py   (raw/processed/tokens are git-ignored)
   tokenizer/   train_tokenizer.py, eval_tokenizer.py, models/hindi_bpe_{16,24,32}k.{model,vocab}
-  model/ train/ eval/ configs/                                          (upcoming)
+  model/       transformer.py, test_model.py
+  train/       train.py, test_resume.py
+  configs/     hindi_25m.json
+  eval/                                                                  (upcoming)
 report/        dataset_stats.md, tokenizer_eval.json, tokenizer_rank_frequency.png
 ```
 
@@ -68,7 +72,43 @@ digit splitting and identity normalization. Evaluated on 20k validation document
 ~25M-parameter model. The unk rate is 0% only because byte fallback is on. Details and examples:
 `report/tokenizer_eval.json`, `report/tokenizer_rank_frequency.png`.
 
-## Reproduce (Phase 1)
+## Model
+
+Decoder-only GPT written from `nn.Linear` / `nn.Embedding` / `nn.LayerNorm` / `nn.Dropout` only
+(`hindi/model/transformer.py`). Attention, the causal mask and positional embeddings are hand-written;
+`nn.Transformer*` and `scaled_dot_product_attention` are not used.
+
+| Setting | Value | Why |
+|---|---|---|
+| Parameters | **25,383,552** | target ~25M |
+| d_model / layers / heads | 384 / 9 / 6 (d_k = 64) | 24k-vocab embeddings take 9.2M, leaving ~16M for 9 blocks |
+| FFN | 384 -> 1536 -> 384, GELU | inner width 4x d_model |
+| Norm | pre-norm LayerNorm + final LN | unnormalized residual path is more stable for deep stacks |
+| Positions | learned absolute, 512 | simple and fast; hard-limits context to 512 tokens |
+| Output head | tied with token embedding | saves 9.2M parameters |
+| Dropout | 0.05 | one pass over 500M tokens (~20 tokens/param) barely overfits, so little is needed |
+
+Checks (`python hindi/model/test_model.py`): parameter count; initial loss close to ln(24000);
+changing token t+1 leaves logits at positions <= t unchanged (max difference 0.0); attention rows sum to 1
+with zeros above the diagonal.
+
+## Training
+
+`hindi/train/train.py`: AdamW (betas 0.9/0.95, weight decay 0.1 on matrices only), 400-step linear warmup then
+cosine decay (6e-4 to 6e-5), gradient clipping 1.0, 65,536 tokens per step (32 x 4 x 512), 7,630 steps (~1 epoch of
+the 500M tokens), bf16/fp16 autocast on GPU, validation every 250 steps. Checkpoints (`ckpt_latest.pt`, atomic write)
+contain weights, optimizer, scaler, step, tokens seen, RNG state, config and loss history; rerunning the same
+command resumes automatically. Data order depends only on (seed, step), so a resumed run is identical to an
+uninterrupted one (`python hindi/train/test_resume.py` verifies this).
+
+This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining is run on Colab/Kaggle:
+
+```bash
+# upload hindi/data/tokens/*.bin to Drive, mount it, then:
+python hindi/train/train.py --config hindi/configs/hindi_25m.json --token-dir /content/drive/MyDrive/tokens        --out-dir /content/drive/MyDrive/runs/hindi_25m     # re-run the same command after a disconnect
+```
+
+## Reproduce (data and tokenizer)
 
 ```bash
 pip install sentencepiece numpy matplotlib
