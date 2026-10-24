@@ -101,12 +101,14 @@ contain weights, optimizer, scaler, step, tokens seen, RNG state, config and los
 command resumes automatically. Data order depends only on (seed, step), so a resumed run is identical to an
 uninterrupted one (`python hindi/train/test_resume.py` verifies this).
 
-This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining is run on Colab/Kaggle:
+This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining runs on Kaggle with
+[`hindi/train/kaggle_train.ipynb`](hindi/train/kaggle_train.ipynb):
 
-```bash
-# upload hindi/data/tokens/*.bin to Drive, mount it, then:
-python hindi/train/train.py --config hindi/configs/hindi_25m.json --token-dir /content/drive/MyDrive/tokens        --out-dir /content/drive/MyDrive/runs/hindi_25m     # re-run the same command after a disconnect
-```
+1. Create a private Kaggle dataset `hindi-tokens` from the files in `hindi/data/tokens/` (`train_*.bin`, `val_000.bin`, `test_000.bin`).
+2. New notebook -> File -> Import notebook -> `kaggle_train.ipynb`. Settings: Accelerator **GPU T4**, Internet **On**; add the `hindi-tokens` dataset as input.
+3. Save Version -> "Save & Run All (Commit)". Training stops itself after ~10.8 h with a checkpoint.
+4. To continue: open a new session of the same notebook, add the previous version's output as an input, and Save & Run All again. The notebook finds `ckpt_latest.pt` and resumes.
+5. Download `runs/hindi_25m/` (checkpoints, `train_log.jsonl`, `loss_curve.png`) from the notebook output and upload to Drive.
 
 ## Reproduce (data and tokenizer)
 

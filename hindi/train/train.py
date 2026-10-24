@@ -149,7 +149,7 @@ def run(cfg, stop_at=None):
     mb, ga, T = tc["micro_batch"], tc["grad_accum"], mc.block_size
     seqs_per_step = mb * ga
     model.train()
-    t0 = time.time()
+    t0, tokens0 = time.time(), tokens
     last = stop_at if stop_at is not None else tc["max_steps"]
     while step < min(last, tc["max_steps"]):
         for g in opt.param_groups:
@@ -177,18 +177,22 @@ def run(cfg, stop_at=None):
         history.append(rec)
         if step % tc["log_every"] == 0 or "val_loss" in rec:
             print(json.dumps({k: round(v, 5) if isinstance(v, float) else v for k, v in rec.items()}),
-                  f"| {tokens / (time.time() - t0):,.0f} tok/s", flush=True)
-        if step % tc["ckpt_every"] == 0 or step == tc["max_steps"] or step == stop_at:
+                  f"| {(tokens - tokens0) / (time.time() - t0):,.0f} tok/s", flush=True)
+        out_of_time = tc.get("time_limit_min") and (time.time() - t0) / 60 > tc["time_limit_min"]
+        if step % tc["ckpt_every"] == 0 or step == tc["max_steps"] or step == stop_at or out_of_time:
             save_ckpt(ck, model, opt, scaler, step, tokens, cfg, best_val, history)
             (out / "train_log.jsonl").write_text("\n".join(json.dumps(r) for r in history), encoding="utf-8")
+        if out_of_time:
+            print(f"time limit reached at step {step}; checkpoint saved, rerun to resume", flush=True)
+            break
     return history
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="../configs/hindi_25m.json")
-    for k in ("max_steps", "micro_batch", "grad_accum", "eval_every", "ckpt_every", "eval_batches"):
-        ap.add_argument(f"--{k.replace('_', '-')}", type=int)
+    for k in ("max_steps", "micro_batch", "grad_accum", "eval_every", "ckpt_every", "eval_batches", "time_limit_min"):
+        ap.add_argument(f"--{k.replace('_', '-')}", type=float if k == "time_limit_min" else int)
     ap.add_argument("--out-dir")
     ap.add_argument("--token-dir")
     a = ap.parse_args()
