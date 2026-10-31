@@ -172,4 +172,14 @@ python make_stats_report.py
 
 ## Large artifacts
 
-Datasets, token shards and checkpoints are not in git. Google Drive links: _to be added_.
+Datasets, token shards and checkpoints are not in git. They are in this Google Drive folder:
+https://drive.google.com/drive/folders/1L8NNp3xsBACBS-_swCmaLK2qst1BUlKb?usp=sharing
+
+| File | What it is |
+|---|---|
+| `ckpt_best.pt` | pretrained Hindi 25M model (weights + config) |
+| `ckpt_finetuned.pt` | model finetuned on the v2 synthetic reasoning data |
+| `ckpt_latest.pt` (if present) | full resumable pretraining checkpoint (weights, optimizer, step, config) |
+
+Load a checkpoint with `hindi/eval/common.py:load_model`. The tokenizer files are in `hindi/tokenizer/models/`; the token
+shards can be regenerated with the commands under "Reproduce".
