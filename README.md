@@ -4,21 +4,39 @@ A decoder-only Transformer language model built from scratch in PyTorch for **Hi
 tokenizer and weights. Course project for *Language Models and Agents* (Monsoon 2026). No pretrained models,
 no pretrained tokenizers, no HuggingFace model classes.
 
-**Scope:** one high-resource language (Hindi) only; the lower-resource model and the 20% manual-collection
-requirement of the original handout are intentionally skipped, so the manual share is reported as 0%.
+**Scope:** one high-resource language (Hindi) only; the lower-resource model, the 20% manual-collection requirement
+and the weekly phase deadlines of the original handout were intentionally skipped (manual share: 0%). The full
+write-up, with every table and figure, is in **[report/final_report.md](report/final_report.md)**.
 
 ## Status
 
 | Stage | State |
 |---|---|
-| Data collection, cleaning, splits, statistics | Done |
+| Data collection, cleaning, near-duplicate removal, splits, statistics | Done |
 | Tokenizer (SentencePiece BPE, 24k) | Done |
-| Transformer implementation (25.4M params), training loop, resume test | Done |
-| Pretraining on 500M tokens | Done (final validation loss 3.3565, PPL 28.7) |
-| Evaluation (PPL/BPB, BLEU/chrF/ROUGE-L, attention analysis) | Planned |
-| Synthetic Hindi reasoning dataset generator | Done |
-| Reasoning finetuning script (tested on CPU) | Done |
-| Reasoning finetuning results, post-finetune attention comparison, final report | Needs the pretrained checkpoint |
+| Transformer (25.4M params), training loop, resume and causality tests | Done |
+| Pretraining on 500M tokens | Done |
+| Evaluation: PPL/BPB, BLEU/chrF++/ROUGE-L, diversity, attention | Done |
+| Synthetic Hindi reasoning dataset, finetuning, pretrained-vs-finetuned attention | Done |
+| Final report | Done (`report/final_report.md`) |
+| Optional ablations (no positional embeddings, `--no-cot`, learning rate) | Not run |
+
+## Results at a glance
+
+| Metric | Value |
+|---|---|
+| Parameters | 25,383,552 |
+| Train tokens | 500,000,033 |
+| Validation / test perplexity | 37.73 / 37.75 |
+| Validation / test bits per byte | 0.5122 / 0.5132 |
+| Generation (T = 0.5) BLEU-4 / chrF++ / ROUGE-L | 3.1 / 13.0 / 12.5 |
+| Reasoning, zero-shot pretrained | 0.0% |
+| Reasoning, finetuned, `test_iid` / `test_ood` | 51.1% / 31.3% (random guessing: 40%) |
+
+The training-log validation loss (3.3565) is computed on the first 3,200 validation windows, which hold more news text
+than the full set; use the full-validation numbers above. The reasoning result shows the answer format and some
+template cues are learned, but not transferable transitive reasoning (yes/no stays at chance; chain tasks fall below chance
+on unseen templates). Details and caveats are in the report.
 
 ## Repository layout
 
@@ -30,7 +48,10 @@ hindi/
   train/       train.py, test_resume.py
   configs/     hindi_25m.json
   eval/        lm_eval.py (PPL/BPB), gen_eval.py (BLEU/chrF++/ROUGE-L, Distinct-n, repetition), attn_analysis.py, common.py
-report/        dataset_stats.md, tokenizer_eval.json, tokenizer_rank_frequency.png
+  reasoning/   generate.py (dataset), finetune.py (finetune + evaluate), data/stats.json
+report/        final_report.md, dataset_stats.md, tokenizer_eval.json, tokenizer_rank_frequency.png,
+               pretrain/ (loss curve, log, perplexity, generation metrics and samples),
+               reasoning/ (accuracy, finetune log, predictions; v1_old_dataset/ = first attempt), attn/ (heatmaps, entropy, distance)
 ```
 
 ## Data
@@ -57,7 +78,7 @@ train documents that near-duplicate them are dropped. Output is `uint16` token s
 | Test | 4,808,583 |
 
 Full tables: [report/dataset_stats.md](report/dataset_stats.md). Known limits: only ~0.85-similarity near-duplicates
-are removed, and val/test are ~99% OSCAR web text.
+are removed, and about 89% of validation and test tokens are OSCAR web text.
 
 ## Tokenizer
 
@@ -112,10 +133,14 @@ This machine has no NVIDIA GPU (CPU speed is ~550 tokens/s), so pretraining runs
 4. To continue: open a new session of the same notebook, add the previous version's output as an input, and Save & Run All again. The notebook finds `ckpt_latest.pt` and resumes.
 5. Download `runs/hindi_25m/` (checkpoints, `train_log.jsonl`, `loss_curve.png`) from the notebook output and upload to Drive.
 
-After pretraining, [`hindi/train/kaggle_eval_finetune.ipynb`](hindi/train/kaggle_eval_finetune.ipynb) runs the whole
-evaluation, finetuning and attention pipeline on Kaggle (inputs: `hindi-tokens` + the pretraining notebook's output).
+Kaggle notebooks used (inputs: the `hindi-tokens` dataset and the pretraining notebook's output):
+[`kaggle_train.ipynb`](hindi/train/kaggle_train.ipynb) (pretraining),
+[`kaggle_eval_finetune.ipynb`](hindi/train/kaggle_eval_finetune.ipynb) (perplexity, generation metrics, attention, finetuning) and
+[`kaggle_finetune_only.ipynb`](hindi/train/kaggle_finetune_only.ipynb) (rerun of finetuning on the final dataset). Note that an imported
+notebook is a copy: changes to the notebook files in this repo do not reach an already-imported copy, only code under `hindi/` does
+(the notebooks clone this repo at start).
 
-## Reasoning dataset (Phase 3)
+## Reasoning dataset
 
 `python hindi/reasoning/generate.py --out hindi/reasoning/data` (deterministic; the jsonl files are not stored in git) writes train (60k), val (1k), test_iid (1.5k) and
 test_ood (1.5k) as jsonl, with `stats.json`. Examples are built programmatically in Hindi, so answers are exact:
@@ -125,7 +150,7 @@ pair ("X और Y में से कौन ...?") or yes/no ("क्या X Y
 (ordering, then the conclusion) before `उत्तर:`. Adjectives agree with the subject's gender and masculine item
 nouns take the oblique form before postpositions.
 
-Leakage control: person and item names are disjoint across train/val/test (training uses ~1,450 real and made-up names so the model must copy names, not memorize them; v1 used only ~55 and the model failed on unseen names); `test_ood` also uses statement and
+Leakage control: person and item names are disjoint across train/val/test (training uses about 1,460 person names, 60 real and 1,400 made-up, so the model must copy names rather than memorize them; the first version used only ~55 names and scored 0% on name answers); `test_ood` also uses statement and
 question templates never seen in training; duplicate prompts are removed across all splits (64,000 unique).
 
 ### Finetuning
@@ -133,7 +158,7 @@ question templates never seen in training; duplicate prompts are removed across 
 ```bash
 python hindi/reasoning/finetune.py --pretrained <runs/hindi_25m/ckpt_best.pt> --out-dir runs/ft
 ```
-Evaluates the pretrained model zero-shot with the same prompt format, finetunes (AdamW lr 3e-4, 3 epochs, batch 32,
+Evaluates the pretrained model zero-shot with the same prompt format, finetunes (AdamW lr 3e-4, 4 epochs over 60k examples, batch 32,
 loss on the reasoning + answer tokens only, tokenizer fixed), then evaluates again. Metric: exact match on the text
 after `उत्तर:` (greedy decoding) on val / test_iid / test_ood, broken down by task kind and question type, plus the
 fraction of examples whose reasoning line is reproduced exactly. Per-example predictions are saved for error
@@ -141,13 +166,13 @@ analysis. Resumable like pretraining (rerun the same command). `--no-cot` trains
 
 ## Evaluation
 
-All scripts take `--ckpt` and run from `hindi/eval/` (the last cell of the Kaggle notebook runs them for you):
+All scripts take `--ckpt` and run from `hindi/eval/`; the Kaggle notebooks below run them for you:
 
 ```bash
 pip install sacrebleu matplotlib
-python lm_eval.py   --ckpt <ckpt_best.pt> --out ../../report/lm_eval.json       # val/test loss, PPL, BPB
-python gen_eval.py  --ckpt <ckpt_best.pt> --out-prefix ../../report/gen          # greedy, T=0.5/1.0/1.5
-python attn_analysis.py --ckpt <ckpt_best.pt> --out-dir ../../report/attn --name pretrained
+python lm_eval.py   --ckpt <ckpt_best.pt> --out ../../report/pretrain/lm_eval.json       # val/test loss, PPL, BPB
+python gen_eval.py  --ckpt <ckpt_best.pt> --out-prefix ../../report/pretrain/gen          # greedy, T=0.5/1.0/1.5
+python attn_analysis.py --ckpt <ckpt_best.pt> --out-dir ../../report/attn --name pretrained \n       --reasoning-data ../reasoning/data/test_iid.jsonl
 ```
 
 - **PPL / BPB:** non-overlapping 512-token windows over the whole split; BPB = total NLL in bits / UTF-8 bytes of the target tokens (EOS counts 0 bytes).
