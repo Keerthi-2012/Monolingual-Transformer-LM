@@ -91,11 +91,16 @@ def evaluate(model, sp, rows, device):
     for r, p in zip(rows, preds):
         ok = extract_answer(p) == r["answer"]
         cot_ok = p.strip().startswith(r["cot"].strip())          # reasoning line reproduced exactly
-        recs.append({"id": r["id"], "kind": r["kind"], "qtype": r["qtype"], "gold": r["answer"], "pred": p, "ok": ok, "cot_ok": cot_ok})
+        pa = extract_answer(p)
+        copied = bool(pa) and pa in r["prompt"] if r["qtype"] in ("sup", "pair") else None   # answer name appears in the question
+        recs.append({"id": r["id"], "kind": r["kind"], "qtype": r["qtype"], "gold": r["answer"], "pred": p, "ok": ok,
+                     "cot_ok": cot_ok, "copied": copied})
         for key in ("all", r["kind"], r["qtype"]):
             by[key].append(ok)
     acc = {k: float(np.mean(v)) for k, v in sorted(by.items())}
     acc["cot_exact"] = float(np.mean([x["cot_ok"] for x in recs]))
+    cp = [x["copied"] for x in recs if x["copied"] is not None]
+    acc["name_copy_rate"] = float(np.mean(cp)) if cp else None   # diagnostic: low = the model invents names instead of copying
     return acc, recs
 
 
@@ -107,7 +112,7 @@ def eval_all(model, sp, data_dir, device, out_dir, tag, n=None):
         res[split], recs = evaluate(model, sp, rows, device)
         with open(Path(out_dir) / f"preds_{tag}_{split}.jsonl", "w", encoding="utf-8") as f:
             f.write("\n".join(json.dumps(r, ensure_ascii=False) for r in recs))
-        print(tag, split, {k: round(v, 3) for k, v in res[split].items() if k in ("all", "cot_exact")}, flush=True)
+        print(tag, split, {k: round(v, 3) for k, v in res[split].items() if k in ("all", "cot_exact", "name_copy_rate")}, flush=True)
     (Path(out_dir) / f"acc_{tag}.json").write_text(json.dumps(res, indent=1), encoding="utf-8")
     return res
 
@@ -160,7 +165,7 @@ if __name__ == "__main__":
     ap.add_argument("--pretrained", required=True, help="pretraining checkpoint (ckpt_best.pt)")
     ap.add_argument("--data", default=str(ROOT / "reasoning" / "data"))
     ap.add_argument("--out-dir", default="runs/ft")
-    ap.add_argument("--epochs", type=int, default=3)
+    ap.add_argument("--epochs", type=int, default=4)
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--ckpt-every", type=int, default=250)

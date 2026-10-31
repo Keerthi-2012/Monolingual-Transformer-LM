@@ -11,7 +11,8 @@ Question   : superlative (largest / smallest), pair ("X या Y"), yes/no ("क
 Gender     : adjectives agree with the sentence subject (लंबा / लंबी, ...).
 
 Leakage control (reported in stats):
-  * entity names are DISJOINT across train / val / test (names and item words);
+  * entity names are DISJOINT across train / val / test (names and item words); training uses ~1,450
+    names (real + made-up) so the model must copy names rather than memorize them;
   * test_ood additionally uses statement and question templates never seen in training;
   * exact duplicate prompts are removed within and across splits.
 
@@ -26,8 +27,8 @@ from pathlib import Path
 # ------------------------------------------------------------------ lexicon
 MALE = "राम श्याम मोहन सोहन रवि अजय विजय संजय राहुल रोहित अमित सुमित नितिन विकास प्रकाश दीपक मनीष सुरेश रमेश महेश गणेश दिनेश राजेश कमल अनिल सुनील अशोक मुकेश हरीश योगेश आदित्य अर्जुन कृष्ण करण वरुण तरुण अभय नवीन पवन सचिन".split()
 FEMALE = "सीता गीता रीता मीना सुनीता अनीता कविता सविता ममता पूजा नेहा स्नेहा रेखा लता शोभा आशा उषा निशा दिशा ज्योति प्रिया सपना सरिता राधा काजल अंजली सोनी किरण पायल दीपिका मंजू सुमन ऋतु नीता रचना भारती शालिनी अदिति तनु बबीता".split()
-ITEMS_M = "बैग फोन जूता छाता तकिया लैपटॉप पंखा दीया गिलास चश्मा घड़ा कुकर रेडियो टीवी".split()
-ITEMS_F = "किताब कलम घड़ी कुर्सी मेज़ कमीज़ टोपी साइकिल थाली कंघी".split()
+ITEMS_M = "बैग फोन जूता छाता तकिया लैपटॉप पंखा दीया गिलास चश्मा घड़ा कुकर रेडियो टीवी कंप्यूटर रुमाल चम्मच पैन बर्तन कंबल".split()
+ITEMS_F = "किताब कलम घड़ी कुर्सी मेज़ कमीज़ टोपी साइकिल थाली कंघी चटाई बाल्टी रस्सी लालटेन पेटी मिठाई गेंद चाबी दवाई पतंग".split()
 
 
 # Masculine nouns in -ा take the oblique (-े) form before a postposition (से, की, का, में, की तुलना...).
@@ -40,8 +41,37 @@ def split_pool(words, n_test=5, n_val=5):
     return {"test": words[:n_test], "val": words[n_test:n_test + n_val], "train": words[n_test + n_val:]}
 
 
-PEOPLE = {s: [(n, "m") for n in split_pool(MALE)[s]] + [(n, "f") for n in split_pool(FEMALE)[s]] for s in ("train", "val", "test")}
-THINGS = {s: [(n, "m") for n in split_pool(ITEMS_M, 3, 3)[s]] + [(n, "f") for n in split_pool(ITEMS_F, 2, 2)[s]] for s in ("train", "val", "test")}
+CONS = list("कखगचजतदनपबमरलवसहशधभय")
+MATRAS = ["", "ा", "ि", "ी", "ु", "ू", "े", "ो"]
+
+
+def synth_names(n, gender, seed, forbid):
+    """n unique pronounceable made-up Hindi names (2-3 syllables), disjoint from `forbid`.
+
+    Male names end in a bare consonant, female names in -ा or -ी, so adjective agreement stays natural.
+    A large pool of such names forces the model to COPY names from the prompt instead of memorizing a few.
+    """
+    rng, out = random.Random(seed), []
+    while len(out) < n:
+        k = rng.choice([2, 3])
+        syl = [rng.choice(CONS) + rng.choice(MATRAS) for _ in range(k - 1)]
+        syl.append(rng.choice(CONS) + (rng.choice(["ा", "ी"]) if gender == "f" else ""))
+        w = "".join(syl)
+        if w not in forbid:
+            forbid.add(w)
+            out.append(w)
+    return out
+
+
+_used = set(MALE + FEMALE + ITEMS_M + ITEMS_F)
+N_SYNTH = {"train": 700, "val": 25, "test": 40}      # per gender; every name is unique across splits
+PEOPLE = {}
+for _s in ("train", "val", "test"):
+    _m, _f = split_pool(MALE)[_s], split_pool(FEMALE)[_s]
+    _sm = synth_names(N_SYNTH[_s], "m", {"train": 11, "val": 12, "test": 13}[_s], _used)
+    _sf = synth_names(N_SYNTH[_s], "f", {"train": 21, "val": 22, "test": 23}[_s], _used)
+    PEOPLE[_s] = [(n, "m") for n in _m + _sm] + [(n, "f") for n in _f + _sf]
+THINGS = {s: [(n, "m") for n in split_pool(ITEMS_M, 4, 4)[s]] + [(n, "f") for n in split_pool(ITEMS_F, 3, 3)[s]] for s in ("train", "val", "test")}
 
 # attribute: more/less adjective (masc, fem), noun, noun gender (for की/का), unit, numeric range, entity kind
 ATTRS = {
@@ -172,7 +202,7 @@ def build_split(split, style, n, seed, seen):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data")
-    ap.add_argument("--n-train", type=int, default=30000)
+    ap.add_argument("--n-train", type=int, default=60000)
     ap.add_argument("--n-val", type=int, default=1000)
     ap.add_argument("--n-test", type=int, default=1500)
     a = ap.parse_args()

@@ -117,7 +117,7 @@ evaluation, finetuning and attention pipeline on Kaggle (inputs: `hindi-tokens` 
 
 ## Reasoning dataset (Phase 3)
 
-`python hindi/reasoning/generate.py --out hindi/reasoning/data` writes train (30k), val (1k), test_iid (1.5k) and
+`python hindi/reasoning/generate.py --out hindi/reasoning/data` (deterministic; the jsonl files are not stored in git) writes train (60k), val (1k), test_iid (1.5k) and
 test_ood (1.5k) as jsonl, with `stats.json`. Examples are built programmatically in Hindi, so answers are exact:
 transitive ordering from 3-4 shuffled pairwise statements ("राम सीता से लंबा है। सीता गीता से लंबा है।"), and
 comparing 2-3 stated numbers (height, age, weight, speed, price). Questions are superlative ("सबसे ... कौन है?"),
@@ -125,8 +125,8 @@ pair ("X और Y में से कौन ...?") or yes/no ("क्या X Y
 (ordering, then the conclusion) before `उत्तर:`. Adjectives agree with the subject's gender and masculine item
 nouns take the oblique form before postpositions.
 
-Leakage control: person and item names are disjoint across train/val/test; `test_ood` also uses statement and
-question templates never seen in training; duplicate prompts are removed across all splits (34,000 unique).
+Leakage control: person and item names are disjoint across train/val/test (training uses ~1,450 real and made-up names so the model must copy names, not memorize them; v1 used only ~55 and the model failed on unseen names); `test_ood` also uses statement and
+question templates never seen in training; duplicate prompts are removed across all splits (64,000 unique).
 
 ### Finetuning
 

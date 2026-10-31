@@ -1,26 +1,26 @@
 {
  "train": {
-  "n": 30000,
+  "n": 60000,
   "kind": {
-   "chain3": 7500,
-   "chain4": 7500,
-   "num2": 7500,
-   "num3": 7500
+   "chain3": 15000,
+   "chain4": 15000,
+   "num2": 15000,
+   "num3": 15000
   },
   "qtype": {
-   "sup": 18648,
-   "yn": 9476,
-   "pair": 1876
+   "sup": 37429,
+   "yn": 18806,
+   "pair": 3765
   },
   "attr": {
-   "age": 6163,
-   "speed": 6017,
-   "height": 6017,
-   "weight": 5852,
-   "price": 5951
+   "age": 11993,
+   "height": 12090,
+   "weight": 11910,
+   "price": 12081,
+   "speed": 11926
   },
-  "answer_yes": 4673,
-  "answer_no": 4803
+  "answer_yes": 9246,
+  "answer_no": 9560
  },
  "val": {
   "n": 1000,
@@ -31,19 +31,19 @@
    "num3": 250
   },
   "qtype": {
-   "sup": 639,
-   "yn": 297,
-   "pair": 64
+   "sup": 657,
+   "yn": 289,
+   "pair": 54
   },
   "attr": {
-   "height": 214,
-   "age": 197,
-   "speed": 211,
-   "weight": 186,
-   "price": 192
+   "height": 209,
+   "age": 188,
+   "speed": 202,
+   "price": 182,
+   "weight": 219
   },
-  "answer_yes": 144,
-  "answer_no": 153
+  "answer_yes": 143,
+  "answer_no": 146
  },
  "test_iid": {
   "n": 1500,
@@ -54,19 +54,19 @@
    "num3": 375
   },
   "qtype": {
-   "sup": 924,
-   "yn": 482,
-   "pair": 94
+   "sup": 930,
+   "yn": 486,
+   "pair": 84
   },
   "attr": {
-   "age": 288,
-   "price": 291,
-   "height": 321,
-   "speed": 297,
-   "weight": 303
+   "age": 296,
+   "price": 309,
+   "speed": 307,
+   "height": 292,
+   "weight": 296
   },
-  "answer_yes": 231,
-  "answer_no": 251
+  "answer_yes": 234,
+  "answer_no": 252
  },
  "test_ood": {
   "n": 1500,
@@ -77,18 +77,18 @@
    "num3": 375
   },
   "qtype": {
-   "sup": 970,
-   "yn": 453,
-   "pair": 77
+   "sup": 931,
+   "yn": 476,
+   "pair": 93
   },
   "attr": {
-   "age": 275,
-   "price": 286,
-   "speed": 287,
-   "height": 316,
-   "weight": 336
+   "age": 322,
+   "price": 299,
+   "speed": 319,
+   "height": 253,
+   "weight": 307
   },
-  "answer_yes": 222,
-  "answer_no": 231
+  "answer_yes": 237,
+  "answer_no": 239
  }
 }
