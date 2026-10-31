@@ -1,0 +1,35 @@
+{
+ "val": {
+  "all": 0.0,
+  "chain3": 0.0,
+  "chain4": 0.0,
+  "num2": 0.0,
+  "num3": 0.0,
+  "pair": 0.0,
+  "sup": 0.0,
+  "yn": 0.0,
+  "cot_exact": 0.0
+ },
+ "test_iid": {
+  "all": 0.0,
+  "chain3": 0.0,
+  "chain4": 0.0,
+  "num2": 0.0,
+  "num3": 0.0,
+  "pair": 0.0,
+  "sup": 0.0,
+  "yn": 0.0,
+  "cot_exact": 0.0
+ },
+ "test_ood": {
+  "all": 0.0,
+  "chain3": 0.0,
+  "chain4": 0.0,
+  "num2": 0.0,
+  "num3": 0.0,
+  "pair": 0.0,
+  "sup": 0.0,
+  "yn": 0.0,
+  "cot_exact": 0.0
+ }
+}

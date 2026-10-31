@@ -1,0 +1,36 @@
+{
+ "model": {
+  "vocab_size": 24000,
+  "block_size": 512,
+  "n_layer": 9,
+  "n_head": 6,
+  "d_model": 384,
+  "d_ff": 1536,
+  "dropout": 0.05,
+  "tie_embeddings": true,
+  "use_pos_emb": true
+ },
+ "train": {
+  "token_dir": "/kaggle/input/datasets/keerthiseela/hindi-tokens",
+  "out_dir": "/kaggle/working/runs/hindi_25m",
+  "micro_batch": 32,
+  "grad_accum": 4,
+  "max_steps": 7630,
+  "warmup_steps": 400,
+  "lr": 0.0006,
+  "min_lr": 6e-05,
+  "weight_decay": 0.1,
+  "betas": [
+   0.9,
+   0.95
+  ],
+  "grad_clip": 1.0,
+  "eval_every": 250,
+  "eval_batches": 100,
+  "ckpt_every": 250,
+  "log_every": 10,
+  "dtype": "auto",
+  "seed": 1337,
+  "time_limit_min": 650.0
+ }
+}
