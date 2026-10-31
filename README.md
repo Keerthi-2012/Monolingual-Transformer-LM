@@ -179,7 +179,7 @@ https://drive.google.com/drive/folders/1L8NNp3xsBACBS-_swCmaLK2qst1BUlKb?usp=sha
 |---|---|
 | `ckpt_best.pt` | pretrained Hindi 25M model (weights + config) |
 | `ckpt_finetuned.pt` | model finetuned on the v2 synthetic reasoning data |
-| `ckpt_latest.pt` (if present) | full resumable pretraining checkpoint (weights, optimizer, step, config) |
+| `ckpt_latest.pt` | full resumable pretraining checkpoint (weights, optimizer, step, config) |
 
 Load a checkpoint with `hindi/eval/common.py:load_model`. The tokenizer files are in `hindi/tokenizer/models/`; the token
 shards can be regenerated with the commands under "Reproduce".
