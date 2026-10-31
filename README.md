@@ -152,7 +152,7 @@ python attn_analysis.py --ckpt <ckpt_best.pt> --out-dir ../../report/attn --name
 
 - **PPL / BPB:** non-overlapping 512-token windows over the whole split; BPB = total NLL in bits / UTF-8 bytes of the target tokens (EOS counts 0 bytes).
 - **Generation:** 500 held-out prefixes (64 tokens), 64-token continuations scored against the true continuation: corpus BLEU-4 and chrF++ (sacrebleu), ROUGE-L F1, Distinct-1/2 and 4-gram repetition rate. Samples go to `gen_samples.md`.
-- **Attention:** heatmaps for layers 0, middle and last (4 heads, Hindi example sentences), per-head entropy and mean attention distance on held-out text. An untrained model gives near-uniform attention (mean distance ~T/4), which is the baseline to compare against.
+- **Attention:** heatmaps for layers 0, middle and last (4 heads, Hindi example sentences), per-head entropy and mean attention distance on held-out text. An untrained model gives near-uniform attention (mean distance ~T/4), which is the baseline to compare against. With `--reasoning-data <jsonl>` the same statistics and heatmaps are also computed on reasoning prompts (used for the pretrained-vs-finetuned comparison).
 
 ## Reproduce (data and tokenizer)
 

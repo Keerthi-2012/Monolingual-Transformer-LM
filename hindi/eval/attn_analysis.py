@@ -62,6 +62,36 @@ def attention_maps(model, token_ids, device):
     return np.stack([a[0].float().cpu().numpy() for a in atts])
 
 
+@torch.no_grad()
+def attention_stats_seqs(model, seqs, device):
+    """Same statistics as attention_stats, but over explicit token sequences (e.g. reasoning prompts).
+
+    Sequences are processed one at a time (they differ in length); each contributes equally.
+    """
+    L, H = model.cfg.n_layer, model.cfg.n_head
+    ent, nent, dist = (np.zeros((L, H)) for _ in range(3))
+    for ids in seqs:
+        T = len(ids)
+        idx = torch.arange(T)
+        d = (idx[:, None] - idx[None, :]).clamp(min=0).float().to(device)
+        norm = torch.log(torch.arange(1, T + 1).float()).to(device)
+        _, _, atts = model(torch.tensor([ids], device=device), return_attn=True)
+        for l, a in enumerate(atts):                                  # a: (1, H, T, T)
+            a = a.float()
+            e = -(a * torch.log(a + 1e-12)).sum(-1)                   # (1, H, T)
+            ent[l] += e.mean((0, 2)).cpu().numpy()
+            nent[l] += (e[..., 1:] / norm[1:]).mean((0, 2)).cpu().numpy()
+            dist[l] += (a * d).sum(-1).mean((0, 2)).cpu().numpy()
+    n = len(seqs)
+    return {"entropy": ent / n, "norm_entropy": nent / n, "mean_distance": dist / n}
+
+
+def reasoning_sequences(path, sp, n):
+    """First n examples of a reasoning jsonl as token ids of prompt + reasoning + answer (no padding)."""
+    rows = [json.loads(l) for l in open(path, encoding="utf-8")][:n]
+    return [sp.encode(r["prompt"] + r["cot"] + "\nउत्तर: " + r["answer"]) for r in rows]
+
+
 def summarize(stats):
     """Plain-dict summary incl. which heads are local (mean distance < LOCAL_DIST tokens)."""
     md = stats["mean_distance"]
@@ -125,7 +155,7 @@ def plot_head_grid(mat, path, title, cbar_label):
 
 
 # ---------------------------------------------------------------- entry point
-def run(ckpt, out_dir, name, tokens_dir, device, n_seq=32, seq_len=256):
+def run(ckpt, out_dir, name, tokens_dir, device, n_seq=32, seq_len=256, reasoning_data=None):
     """Compute stats on held-out text and draw all figures for one checkpoint."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -144,6 +174,20 @@ def run(ckpt, out_dir, name, tokens_dir, device, n_seq=32, seq_len=256):
         labels = [sp.id_to_piece(i).replace("▁", "") for i in ids]
         plot_heatmaps(maps, labels, [0, L // 2, L - 1], list(range(min(4, H))), out / f"{name}_heatmap_s{k}.png",
                       f"Attention heatmaps ({name}), sentence {k}")
+    if reasoning_data:                                         # attention on comparative-reasoning prompts
+        seqs = reasoning_sequences(reasoning_data, sp, 64)
+        rs = attention_stats_seqs(model, seqs, device)
+        (out / f"{name}_reasoning_attn_stats.json").write_text(json.dumps(summarize(rs), indent=1))
+        plot_head_grid(rs["entropy"], out / f"{name}_reasoning_entropy.png",
+                       f"Attention entropy per head on reasoning prompts ({name})", "Entropy (nats)")
+        plot_head_grid(rs["mean_distance"], out / f"{name}_reasoning_distance.png",
+                       f"Mean attention distance on reasoning prompts ({name})", "Distance (tokens)")
+        for k, ids in enumerate(seqs[:2]):
+            labels = [sp.id_to_piece(i).replace("▁", "") for i in ids]
+            plot_heatmaps(attention_maps(model, ids, device), labels, [0, L // 2, L - 1], list(range(min(4, H))),
+                          out / f"{name}_reasoning_heatmap_s{k}.png", f"Attention on a reasoning prompt ({name}), example {k}")
+        print("reasoning-prompt layer mean entropy:", summarize(rs)["layer_mean_entropy"])
+        print("reasoning-prompt layer mean distance:", summarize(rs)["layer_mean_distance"])
     return summarize(stats)
 
 
@@ -154,8 +198,10 @@ if __name__ == "__main__":
     ap.add_argument("--name", default="pretrained")
     ap.add_argument("--tokens", default=str(ROOT / "data" / "tokens"))
     ap.add_argument("--n-seq", type=int, default=32)
+    ap.add_argument("--reasoning-data", help="reasoning jsonl (e.g. test_iid.jsonl): also analyse attention on its prompts")
     a = ap.parse_args()
-    s = run(a.ckpt, a.out_dir, a.name, a.tokens, "cuda" if torch.cuda.is_available() else "cpu", a.n_seq)
+    s = run(a.ckpt, a.out_dir, a.name, a.tokens, "cuda" if torch.cuda.is_available() else "cpu", a.n_seq,
+        reasoning_data=a.reasoning_data)
     print("local heads:", s["local_heads"], "/", s["total_heads"])
     print("layer mean entropy:", s["layer_mean_entropy"])
     print("layer mean distance:", s["layer_mean_distance"])
