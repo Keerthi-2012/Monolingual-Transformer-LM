@@ -1,12 +1,8 @@
 # Monolingual Transformer LM (Hindi)
 
 A decoder-only Transformer language model built from scratch in PyTorch for **Hindi**, with its own corpus,
-tokenizer and weights. Course project for *Language Models and Agents* (Monsoon 2026). No pretrained models,
+tokenizer and weights. No pretrained models,
 no pretrained tokenizers, no HuggingFace model classes.
-
-**Scope:** one high-resource language (Hindi) only; the lower-resource model, the 20% manual-collection requirement
-and the weekly phase deadlines of the original handout were intentionally skipped (manual share: 0%). The full
-write-up, with every table and figure, is in **[report/final_report.md](report/final_report.md)**.
 
 ## Status
 
