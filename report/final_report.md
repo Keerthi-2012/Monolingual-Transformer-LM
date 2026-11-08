@@ -279,9 +279,3 @@ num3 49.1% vs 39.7%. Chance for chain3 / chain4 superlatives is 33% / 25%.
 
 Commands for every step, the Kaggle notebooks used, and the Drive links for the checkpoints are in `README.md`.
 Hyperparameters are stored with every checkpoint (`config.json`, the checkpoint's `config` field).
-
-## 11. Use of AI tools
-
-The code, experiments and this report were developed with the assistance of an AI coding assistant (Claude Code). Under the
-course policy, the author must be able to explain every component of the submitted code; the explanations of attention,
-masking, normalization, tying and the training loop above are written to support that.
