@@ -205,6 +205,10 @@ python hindi/app/app.py                                        # http://127.0.0.
 On Windows, `hindi/app/run_demo.bat` does the same. The model is a research artifact: it was trained on unfiltered web text and
 produces fluent but often false or repetitive Hindi, so it is meant for local demonstration, not public deployment.
 
+<img width="1917" height="962" alt="image" src="https://github.com/user-attachments/assets/35496412-d6f1-47d2-84aa-22b19480092d" />
+
+
+
 ## Large artifacts
 
 Datasets, token shards and checkpoints are not in git. They are in this Google Drive folder:
