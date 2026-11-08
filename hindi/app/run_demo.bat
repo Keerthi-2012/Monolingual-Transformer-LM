@@ -5,3 +5,4 @@ set "PY=%HINDI_DEMO_PY%"
 if "%PY%"=="" if exist "D:\Keerthi\Personal\lm_demo_venv\Scripts\python.exe" set "PY=D:\Keerthi\Personal\lm_demo_venv\Scripts\python.exe"
 if "%PY%"=="" set "PY=python"
 "%PY%" -X utf8 "%~dp0app.py" %*
+pause

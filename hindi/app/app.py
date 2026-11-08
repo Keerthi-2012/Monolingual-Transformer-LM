@@ -184,4 +184,4 @@ if __name__ == "__main__":
         print(text)
         print(f"{n} tokens at {n / (time.time() - t0):.1f} tokens/s")
         sys.exit(0)
-    build_ui().launch(server_name="127.0.0.1", server_port=a.port)
+    build_ui().launch(server_name="127.0.0.1", server_port=a.port, inbrowser=True)
