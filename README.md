@@ -191,6 +191,20 @@ python build_corpus.py                                          # ~10 min, write
 python make_stats_report.py
 ```
 
+## Demo
+
+A local Gradio app (`hindi/app/app.py`) with streaming text continuation (temperature, top-p, repetition penalty), an
+attention viewer (pick a layer and head), and a page of model facts. It runs on a CPU at about 16 tokens/s.
+
+```bash
+python -m venv demo_venv && demo_venv/Scripts/activate        # use a separate environment: gradio pins its own huggingface-hub
+pip install -r hindi/app/requirements.txt                      # on CPU-only machines: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# put ckpt_best.pt (from the Drive folder below) in hindi/app/ or set HINDI_LM_CKPT
+python hindi/app/app.py                                        # http://127.0.0.1:7860   (add --selftest to print one sample and exit)
+```
+On Windows, `hindi/app/run_demo.bat` does the same. The model is a research artifact: it was trained on unfiltered web text and
+produces fluent but often false or repetitive Hindi, so it is meant for local demonstration, not public deployment.
+
 ## Large artifacts
 
 Datasets, token shards and checkpoints are not in git. They are in this Google Drive folder:
